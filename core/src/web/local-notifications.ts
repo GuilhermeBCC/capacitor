@@ -55,7 +55,11 @@ export class LocalNotificationsPluginWeb extends WebPlugin implements LocalNotif
   buildNotification(localNotification: LocalNotification) {
     const l = localNotification;
     return new Notification(l.title, {
-      body: l.body
+      body: l.body,
+      icon: l.icon,
+      tag: l.tag,
+      silent: l.silent,
+      requireInteraction: l.requireInteraction,
     });
   }
 
@@ -92,24 +96,30 @@ export class LocalNotificationsPluginWeb extends WebPlugin implements LocalNotif
   }
 
   areEnabled(): Promise<LocalNotificationEnabledResult> {
-    throw new Error("Method not implemented.");
+   return window.Notification && Notification.permission === 'granted';
   }
-
 
   requestPermissions(): Promise<PermissionsRequestResult> {
     return new Promise((resolve, reject) => {
-      Notification.requestPermission().then((result) => {
-        if(result === 'denied' || result === 'default') {
-          reject(result);
-          return;
-        }
-        resolve({
-          results: [ result ]
+      if(window.Notification && Notification.permission !== "denied")
+        Notification.requestPermission().then((result) => {
+          if(result === 'denied' || result === 'default') {
+            reject({
+              results: [ false ]
+            });
+            return;
+          }
+          resolve({
+            results: [ true ]
+          });
+        }).catch((e) => {
+          reject(e);
         });
-      }).catch((e) => {
-        reject(e);
       });
-    });
+    else
+      resolve({
+        results: [ false ]
+      });
   }
 }
 
